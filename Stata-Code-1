@@ -1,0 +1,175 @@
+log using Data_Analysis_Presentation, replace
+use "D:\Documents\Adam Stata\Exp Data Wide.dta", clear
+
+
+// ***************** create Condition variables
+
+gen Condition = "All"
+replace Condition = "Class" if Class_Condition == 1
+replace Condition = "Case" if Case_Condition == 1
+
+// ***************** create Hit_Score and Miss_Score
+
+gen Miss_Score = Pred_2 + Pred_9 + Pred_10
+gen Hit_Score = Outcome_Score - Miss_Score
+
+// ****************** ANOVA tests between conditions
+
+oneway Outcome_Score Condition, tabulate
+oneway Miss_Score Condition, tabulate
+oneway Hit_Score Condition, tabulate
+
+oneway Self_Expert Condition, tabulate
+oneway Month_Soccer Condition, tabulate
+oneway WC_Soccer Condition, tabulate
+oneway Quiz_Score Condition, tabulate
+oneway Recruited Condition, tabulate
+oneway Age Condition, tabulate
+oneway Gender Condition, tabulate
+oneway School Condition, tabulate
+oneway Superstition Condition, tabulate
+oneway Comfort_Stats Condition, tabulate
+
+oneway Quiz_Score Recruited, tabulate
+oneway Month_Soccer Recruited, tabulate
+oneway WC_Soccer Recruited, tabulate
+oneway Self_Expert Recruited, tabulate
+
+// ****************** true vs. subjective expertise
+
+oneway Total_Soccer Self_Expert, tabulate
+oneway Month_Soccer Self_Expert, tabulate
+oneway WC_Soccer Self_Expert, tabulate
+oneway Quiz_Score Self_Expert, tabulate
+
+// **********************************************************
+
+// ****************** outcome score on conditions
+
+reg Outcome_Score All_Condition Class_Condition, r
+reg Outcome_Score All_Condition Case_Condition, r
+reg Outcome_Score Class_Condition Case_Condition, r
+reg Outcome_Score AllClass, r
+
+// ****************** outcome score on conditions, expertise
+
+reg Outcome_Score All_Condition Case_Condition Quiz_Score, r
+outreg using SCE.doc, replace
+reg Outcome_Score All_Condition Case_Condition Self_Expert, r
+outreg using SCE.doc, merge
+reg Outcome_Score All_Condition Case_Condition Total_Soccer, r
+outreg using SCE.doc, merge
+reg Outcome_Score All_Condition Case_Condition Month_Soccer, r
+outreg using SCE.doc, merge
+reg Outcome_Score All_Condition Case_Condition WC_Soccer, r
+outreg using SCE.doc, merge
+reg Outcome_Score All_Condition Case_Condition WC_Soccer Month_Soccer Quiz_Score Self_Expert, r
+outreg using SCE.doc, merge
+
+// ****************** generate interaction variables for conditions
+
+gen Self_All = Self_Expert*All_Condition
+gen Quiz_All = Quiz_Score*All_Condition
+gen Total_All = Total_Soccer*All_Condition
+gen Month_All = Month_Soccer*All_Condition
+gen WC_All = WC_Soccer*All_Condition
+
+// ****************** outcome score on conditions, expertise, interactions
+
+reg Outcome_Score All_Condition Case_Condition Quiz_Score Quiz_All, r
+outreg using SCEI.doc, replace
+test Quiz_Score Quiz_All
+
+reg Outcome_Score All_Condition Case_Condition Self_Expert Self_All, r
+outreg using SCEI.doc, merge
+test Self_Expert Self_All
+
+reg Outcome_Score All_Condition Case_Condition Total_Soccer Total_All, r
+outreg using SCEI.doc, merge
+test Total_Soccer Total_All
+
+reg Outcome_Score All_Condition Case_Condition Month_Soccer Month_All, r
+outreg using SCEI.doc, merge
+test Month_Soccer Month_All
+
+reg Outcome_Score All_Condition Case_Condition WC_Soccer WC_All, r
+outreg using SCEI.doc, merge
+test WC_Soccer WC_All
+
+reg Outcome_Score All_Condition Case_Condition WC_Soccer WC_All Month_Soccer Month_All Self_Expert Self_All Quiz_Score Quiz_All, r
+outreg using SCEI.doc, merge
+test WC_Soccer WC_All Quiz_Score Quiz_All Self_Expert Self_All Month_Soccer Month_All
+
+// ****************** outcome score on conditions, expertise, interactions, no case condition
+
+reg Outcome_Score All_Condition Quiz_Score Quiz_All if Case_Condition == 0, r
+test Quiz_Score Quiz_All
+reg Outcome_Score All_Condition Self_Expert Self_All if Case_Condition == 0, r
+test Self_Expert Self_All
+reg Outcome_Score All_Condition Total_Soccer Total_All if Case_Condition == 0, r
+test Total_Soccer Total_All
+reg Outcome_Score All_Condition Month_Soccer Month_All if Case_Condition == 0, r
+test Month_Soccer Month_All
+reg Outcome_Score All_Condition WC_Soccer WC_All if Case_Condition == 0, r
+test WC_Soccer WC_All
+
+// ****************************************************************************
+
+// ****************** generate interaction variables for usefulness and conditions
+
+gen UseLeague_All = Use_League*All_Condition
+gen UseHistor_All = Use_Histor*All_Condition
+gen UseKicker_All = Use_Kicker*All_Condition
+gen UseGoalie_All = Use_Goalie*All_Condition
+gen UseContext_All = Use_Context*All_Condition
+
+// ************************************ usefulness goalie
+
+reg Outcome_Score All_Condition Case_Condition Use_Goalie UseGoalie_All, r
+outreg using Use_Goalie.doc, replace
+test Use_Goalie UseGoalie_All
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+test Use_Goalie UseGoalie_All
+
+
+
+gen UseGoalie_Self = Use_Goalie*Self_Expert
+gen UseGoalie_Self_All = UseGoalie_Self*All_Condition
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Self_Expert UseGoalie_Self if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Self_Expert Self_All UseGoalie_Self UseGoalie_Self_All if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+test UseGoalie_All Self_All UseGoalie_Self UseGoalie_Self_All
+test Self_All Self_Expert
+
+
+
+gen UseGoalie_Quiz = Use_Goalie*Quiz_Score
+gen UseGoalie_Quiz_All = UseGoalie_Quiz*All_Condition
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Quiz_Score UseGoalie_Quiz if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Quiz_Score Quiz_All UseGoalie_Quiz UseGoalie_Quiz_All if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+test UseGoalie_All Quiz_All UseGoalie_Quiz UseGoalie_Quiz_All
+test Quiz_All Quiz_Score
+
+
+
+gen UseGoalie_Total = Use_Goalie*Total_Soccer
+gen UseGoalie_Total_All = UseGoalie_Total*All_Condition
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Total_Soccer UseGoalie_Total if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+
+reg Outcome_Score All_Condition Use_Goalie UseGoalie_All Total_Soccer Total_All UseGoalie_Total UseGoalie_Total_All if Case_Condition == 0, r
+outreg using Use_Goalie.doc, merge
+test UseGoalie_All Total_All UseGoalie_Total UseGoalie_Total_All
+test Total_All Total_Soccer
+
+log close
